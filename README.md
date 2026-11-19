@@ -1,26 +1,27 @@
-# Transcritor de Aulas
+# Transcritor
 
-Aplicativo mobile em **Expo (SDK 58)** / **React Native** para gravar aulas, organizar múltiplos áudios e transcrições por aula, ouvir o áudio clicando diretamente em qualquer palavra da transcrição e editar manualmente trechos ou palavras incorretas — com tema escuro e foco em transcrição **100% offline** sem limites de minutos.
+Aplicativo mobile em **Expo (SDK 58)** / **React Native** para gravar ou importar áudios de **palestras, aulas, reuniões e entrevistas**, organizar tudo em pastas e sessões, ouvir o áudio clicando diretamente em qualquer palavra da transcrição e editar manualmente trechos ou palavras incorretas — com tema escuro e transcrição **100% offline** sem limites de minutos.
 
 ---
 
 ## Funcionalidades
 
-- **Organização por Aulas:**
-  - Crie e renomeie aulas na tela inicial ou diretamente na tela da aula.
-  - Veja a contagem de áudios, duração total, quantidade de transcrições e prévia do texto.
-- **Múltiplos Áudios e Transcrições por Aula:**
-  - Grave um ou mais áudios dentro da mesma aula e renomeie cada áudio.
-  - Gere e alterne entre múltiplas transcrições na aula; cada transcrição mantém automaticamente o mesmo nome do áudio transcrito.
+- **Organização por Pastas e Sessões:**
+  - Crie pastas personalizadas, mova sessões entre pastas e filtre por pasta ou categoria (`Palestra`, `Aula`, `Reunião`, `Entrevista`, `Outro`).
+  - Veja a contagem de áudios, duração total, quantidade de transcrições, marcadores e prévia do texto.
+- **Múltiplos Áudios e Transcrições por Sessão:**
+  - Grave um ou mais áudios dentro da mesma sessão (em `.wav` 16-bit PCM a 16 kHz no celular) ou importe arquivos `.wav` externos do aparelho.
+  - Renomeie cada áudio; as transcrições acompanham automaticamente o nome do áudio correspondente.
+- **Marcadores de Momento Importante:**
+  - Marque segundos importantes **durante a gravação** ou **durante a reprodução**, renomeie marcadores e pule direto para eles com um toque.
 - **Player de Áudio Completo:**
-  - Controles de Play/Pause, avançar/voltar 10s e velocidade (`1x`, `1.25x`, `1.5x`, `2x`).
-  - Suporte a gravação e reprodução em segundo plano configurados via `expo-audio`.
-- **Transcrição Interativa e Editável:**
-  - **Clique para ouvir:** toque em qualquer palavra ou timestamp para pular o áudio exatamente para aquele instante, com destaque em tempo real da palavra reproduzida.
-  - **Edição inline:** ative **Editar Palavras** (ou segure sobre uma palavra) para corrigir palavras individuais, ou toque no ícone de lápis do trecho para editar a frase inteira.
+  - Controles de Play/Pause, barra de progresso clicável, avançar/voltar 10s, velocidade (`1x`, `1.25x`, `1.5x`, `2x`) e reprodução em segundo plano.
+- **Transcrição Interativa, Editável e com Progresso:**
+  - **100% Offline Embutida:** modelo Whisper Base (`ggml-base.bin`, ~148 MB) já embutido no app — sem internet, sem conta e sem chave de API. A IA é carregada apenas durante a transcrição e liberada automaticamente ao terminar ou ir para segundo plano.
+  - **Progresso real (0%–100%) e Cancelar:** acompanhe o andamento e cancele a transcrição a qualquer momento.
+  - **Clique para ouvir:** toque em qualquer palavra ou timestamp para pular o áudio para aquele instante, com destaque em tempo real da palavra reproduzida.
+  - **Edição inline:** ative **Editar Palavras** (ou segure sobre uma palavra) para corrigir palavras individuais, ou edite o trecho inteiro.
   - **Busca e compartilhamento:** filtre palavras dentro da transcrição e compartilhe o texto via `Share` nativo.
-- **Tema Escuro:** interface em paleta escura (`#020617` / `#0F172A` / `#3B82F6`).
-- **Configurações do Modelo Offline:** gerencie o download ou remoção do modelo `ggml-base.bin` (~142 MB) diretamente no aparelho.
 
 ---
 
@@ -29,8 +30,8 @@ Aplicativo mobile em **Expo (SDK 58)** / **React Native** para gravar aulas, org
 - **Expo SDK 58** (`expo ~58.0.25`)
 - **React 19.3.0** / **React Native 0.88.1**
 - **Expo Router** (`expo-router ~58.0.31`) — roteamento baseado em arquivos em `src/app/`
-- **Expo Audio** (`expo-audio ~58.0.12`) — gravação e reprodução de áudio
-- **Expo FileSystem** (`expo-file-system ~58.0.13`) — persistência local (`lessons.json`) e download do modelo Whisper
+- **Expo Audio** (`expo-audio ~58.0.12`) — gravação (`useAudioStream` em `.wav` no celular) e reprodução
+- **Expo FileSystem** (`expo-file-system ~58.0.13`) e **Expo Document Picker** (`expo-document-picker`)
 - **whisper.rn** (`^0.7.4`) — inferência local em C++/JSI usando `whisper.cpp`
 
 ---
@@ -39,62 +40,41 @@ Aplicativo mobile em **Expo (SDK 58)** / **React Native** para gravar aulas, org
 
 ```text
 transcritor/
-├── app.json                    # Configurações Expo e plugins (expo-router, expo-audio, expo-secure-store)
+├── app.json                    # Configurações Expo, permissões e identificadores Android/iOS
+├── eas.json                    # Perfis de build (development, preview, production)
+├── metro.config.js             # Suporte a assets .bin (modelo Whisper embutido)
 ├── package.json                # Dependências e scripts
 ├── tsconfig.json               # Configuração TypeScript (strict)
+├── assets/models/
+│   └── ggml-base.bin           # Modelo Whisper Base embutido (~148 MB)
 └── src/
-    ├── types.ts                # Tipos de Lesson, LessonAudio, LessonTranscription e TranscriptSegment
-    ├── storage.ts              # Persistência local (lessons.json / localStorage na Web) e utilitários
-    ├── transcribe.ts           # Integração offline com whisper.rn e download de ggml-base.bin
+    ├── types.ts                # Tipos de Folder, Lesson, SessionTag, AudioBookmark, etc.
+    ├── storage.ts              # Persistência local (lessons.json / folders.json / localStorage na Web)
+    ├── transcribe.ts           # Motor offline whisper.rn com progresso, cancelamento e liberação de memória
     └── app/
-        ├── _layout.tsx         # Navegador Stack raiz com tema escuro
-        ├── index.tsx           # Tela inicial: listagem e criação de aulas
-        ├── settings.tsx        # Gerenciamento do modelo offline Whisper Base (~142 MB)
+        ├── _layout.tsx         # Navegador Stack raiz + liberação da IA em background
+        ├── index.tsx           # Tela inicial: pastas, filtros por tipo, sessões
+        ├── settings.tsx        # Status da IA offline embutida
         └── recording/
-            └── [id].tsx        # Tela da aula: gravação, player, transcrições clicáveis e edição
+            └── [id].tsx        # Tela da sessão: gravação/importação, player, marcadores e transcrição
 ```
 
 ---
 
-## Pré-requisitos e Execução
-
-### 1. Instalar dependências
+## Comandos Úteis
 
 ```bash
-npm install
-```
-
-### 2. Verificações de código
-
-```bash
+npm install        # Instalar dependências
 npx tsc --noEmit   # Typecheck TypeScript
 npx expo lint      # Linter ESLint
 npx expo-doctor    # Diagnóstico do projeto Expo
+npx expo start -c  # Iniciar servidor de desenvolvimento
 ```
 
-### 3. Iniciar servidor de desenvolvimento
-
-```bash
-npx expo start -c
-```
-
-> **Importante:** como o projeto usa `whisper.rn` (código nativo em C++ / JSI), **a transcrição offline não funciona no Expo Go padrão nem no navegador**. Para rodar a transcrição no celular, é necessário gerar um **Development Build** ou build nativo:
+> **Nota para celular:** como o projeto usa `whisper.rn` (código nativo em C++ / JSI), a transcrição offline funciona apenas em um **Development Build** ou build nativo (não no Expo Go padrão nem no navegador):
 >
 > ```bash
-> npx expo run:android
-> # ou via EAS Build:
 > npx eas-cli@latest build --profile development --platform android
+> # ou localmente com Android Studio:
+> npx expo run:android
 > ```
-
----
-
-## Estado Atual e Pendências Conhecidas
-
-Antes de gerar o APK/IPA final de produção, os seguintes pontos foram identificados na auditoria do projeto e precisam ser resolvidos:
-
-1. **Formato de áudio para `whisper.rn`:** `src/app/recording/[id].tsx` atualmente grava usando `RecordingPresets.HIGH_QUALITY` (`.m4a`), enquanto o `whisper.rn` exige arquivos **WAV 16-bit PCM** (`.wav`). É necessário migrar a gravação para gerar `.wav` (ex.: via `useAudioStream` + `startFileRecordingAsync({ format: 'wav' })` do `expo-audio`).
-2. **Dependências para bundle Android e `expo-doctor`:**
-   - Instalar peer dependencies faltantes: `npx expo install expo-font expo-asset`
-   - Resolver a dependência `buffer` exigida indiretamente por `whisper.rn` (`safe-buffer`) no Metro bundler.
-3. **Identificadores de build nativo:** adicionar `android.package` e `ios.bundleIdentifier` em `app.json`, além de criar `eas.json` caso utilize o EAS Build.
-4. **Melhorias de robustez pendentes:** bloquear transcrições simultâneas na UI, validar download completo do `ggml-base.bin` via arquivo temporário e sincronizar estado ao trocar entre áudios durante a reprodução.
