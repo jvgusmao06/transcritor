@@ -1,15 +1,18 @@
 {
   "expo": {
-    "name": "transcritor",
+    "name": "Transcritor",
     "slug": "transcritor",
+    "scheme": "transcritor",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.transcritor.aulas"
     },
     "android": {
+      "package": "com.transcritor.aulas",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -20,6 +23,20 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Permitir que o Transcritor acesse seu microfone para gravar áudios.",
+          "enableBackgroundPlayback": true,
+          "enableBackgroundRecording": true
+        }
+      ],
+      "expo-font",
+      "expo-asset"
+    ]
   }
 }
