@@ -63,6 +63,13 @@ transcritor/
 
 ## Comandos Úteis
 
+> **Modelo offline (`ggml-base.bin`):** por exceder o limite de 100 MB do GitHub, o arquivo `assets/models/ggml-base.bin` (~141 MB) fica no `.gitignore`. Após clonar o repositório, baixe-o antes de gerar o build nativo:
+>
+> ```bash
+> mkdir -p assets/models
+> curl -L -o assets/models/ggml-base.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin
+> ```
+
 ```bash
 npm install        # Instalar dependências
 npx tsc --noEmit   # Typecheck TypeScript
